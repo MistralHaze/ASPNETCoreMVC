@@ -1,0 +1,159 @@
+@model IEnumerable<AccountTypeDTO>
+
+@{
+    ViewData["Title"]= "Account types";
+}
+
+<h1>Account types</h1>
+<h5>Account type refers to how to group accounts:
+    Ex: Credit cards, loans, etc.
+</h5>
+<a asp-action="Create" class="btn btn-primary mb-3">Create new</a>
+
+<table class="table" id="AccountTypesTable">
+    <thead>
+        <tr>
+            <th>Actions</th>
+            <th>Names</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach(AccountTypeDTO account in Model)
+        {
+        <tr>
+            <td>
+                <input type="hidden" value="@account.Id" class="ids">
+                <a class="btn btn-primary" asp-action="Edit" asp-route-id="@account.Id">Edit</a>
+                <a class="btn btn-danger" asp-action="Delete" asp-route-id="@account.Id">Delete</a>
+            </td>
+            <td>
+                @account.Name
+            </td>
+        </tr>
+        }
+    </tbody>
+</table>
+
+
+<script>
+    //TODO: The blue border to know where the row will land is not visible.- Fix
+    //From: https://codepen.io/umurkose/pen/wvYWgQm?editors=0010
+(function () {
+    const urlOrder='@Url.Action("OrderRows")';
+    // Get the table and its rows
+    var table = document.getElementById('AccountTypesTable');
+    var rows = table.rows;
+    // Initialize the drag source element to null
+    var dragSrcEl = null;
+
+    // Loop through each row (skipping the first row which contains the table headers)
+    for (var i = 1; i < rows.length; i++) {
+        var row = rows[i];
+        // Make each row draggable
+        row.draggable = true;
+
+        // Add an event listener for when the drag starts
+        row.addEventListener('dragstart', function (e) {
+            // Set the drag source element to the current row
+            dragSrcEl = this;
+            // Set the drag effect to "move"
+            e.dataTransfer.effectAllowed = 'move';
+            // Set the drag data to the outer HTML of the current row
+            e.dataTransfer.setData('text/html', this.outerHTML);
+            // Add a class to the current row to indicate it is being dragged
+            this.classList.add('bg-gray-100');
+        });
+
+        // Add an event listener for when the drag ends
+        row.addEventListener('dragend', function (e) {
+            // Remove the class indicating the row is being dragged
+            this.classList.remove('bg-gray-100');
+            // Remove the border classes from all table rows
+            table.querySelectorAll('.border-t-2', '.border-blue-300').forEach(function (el) {
+                el.classList.remove('border-t-2', 'border-blue-300');
+            });
+        });
+
+        // Add an event listener for when the dragged row is over another row
+        row.addEventListener('dragover', function (e) {
+            // Prevent the default dragover behavior
+            e.preventDefault();
+            // Add border classes to the current row to indicate it is a drop target
+            this.classList.add('border-t-2', 'border-blue-300');
+        });
+
+        // Add an event listener for when the dragged row enters another row
+        row.addEventListener('dragenter', function (e) {
+            // Prevent the default dragenter behavior
+            e.preventDefault();
+            // Add border classes to the current row to indicate it is a drop target
+            this.classList.add('border-t-2', 'border-blue-300');
+        });
+
+        // Add an event listener for when the dragged row leaves another row
+        row.addEventListener('dragleave', function (e) {
+            // Remove the border classes from the current row
+            this.classList.remove('border-t-2', 'border-blue-300');
+        });
+
+        // Add an event listener for when the dragged row is dropped onto another row
+        row.addEventListener('drop', async function (e) 
+                             {
+            // Prevent the default drop behavior
+            e.preventDefault();
+            // If the drag source element is not the current row
+            if (dragSrcEl != this) {
+                // Get the index of the drag source element
+                var sourceIndex = dragSrcEl.rowIndex;
+                // Get the index of the target row
+                var targetIndex = this.rowIndex;
+                // If the source index is less than the target index
+                if (sourceIndex < targetIndex) {
+                    // Insert the drag source element after the target row
+                    table.tBodies[0].insertBefore(dragSrcEl, this.nextSibling);
+                } else {
+                    // Insert the drag source element before the target row
+                    table.tBodies[0].insertBefore(dragSrcEl, this);
+                }
+            }
+            console.log("dropping");
+
+            await updateOrder();
+            // Remove the border classes from all table rows
+            table.querySelectorAll('.border-t-2', '.border-blue-300').forEach(function (el) {
+              el.classList.remove('border-t-2', 'border-blue-300');
+                });
+            });
+        }
+
+        async function updateOrder(){
+            const ids= getElementsIds();
+            await sendIdsToBackend(ids);
+        }
+
+        function getElementsIds(){
+            let nodeList=document.querySelectorAll(".ids");
+            let items= Array.from(nodeList);
+            return items;
+        }
+
+        async function sendIdsToBackend(ids){
+            console.log(ids);
+            let idValues=[];
+            for (const id of ids ){
+                idValues.push(id.value);
+            }
+            data= JSON.stringify(idValues)
+            const request={
+                method:'POST',
+                body: data,
+                headers:{
+                    'Content-Type': 'application/json'
+                    }
+            };
+            console.log(request)
+            await fetch(urlOrder,request).then(()=> console.log(`request sent`)); 
+        }
+    })();
+
+</script>
