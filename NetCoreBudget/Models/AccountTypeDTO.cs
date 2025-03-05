@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using NetCoreBudget.Validations;
 
+//TODO: Is this really a DTO or just a model object? read more about it
 public class AccountTypeDTO/*:IValidatableObject*/{
     
 
