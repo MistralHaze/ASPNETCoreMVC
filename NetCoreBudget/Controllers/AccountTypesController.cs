@@ -120,12 +120,24 @@ public class AccountTypesController: Controller{
     }
 
     [HttpPost]
-    public IActionResult OrderRows([FromBody]int[] value){
-        _logger.LogInformation("si llega! Ids is " + value);
-        if(value==null) return Error();
-        for(int i=0;i<value.Length;i++){
-            _logger.LogInformation(value.ToString());
+    public async Task<IActionResult> OrderRows([FromBody]int[] ids){
+        if(ids==null) return Error();
+        int userId= userService.GetUserId();
+
+        //Check if ids really belong to UserId
+        IEnumerable<AccountTypeDTO> accounts= await accountTypeRepository.Get(userId);
+        IEnumerable<int> accountIds= accounts.Select(account=>account.Id);
+
+        IEnumerable<int> idsThatDoNotBelongToUser= ids.Except(accountIds).ToList();
+        if(idsThatDoNotBelongToUser.Count()>0){
+            return Forbid();
         }
+
+        //Remember. We create new types because we do not trust user sent information
+        IEnumerable<AccountTypeDTO> orderedAccounts= ids.Select((value, index)=>
+            new AccountTypeDTO(){Id=value, Order=index+1}).AsEnumerable();
+
+        await accountTypeRepository.Order(orderedAccounts);
         return Ok();
     }
 

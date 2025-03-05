@@ -12,11 +12,10 @@ public class AccountTypeRepository:IAccountTypeRepository{
 
     public async Task Create(AccountTypeDTO accountType){
         using var connection= new SqlConnection(connectionString);
-         var id= await connection.QuerySingleAsync<int>($@"
-            INSERT INTO AccountTypes (Name,UserId, [Order])
-            Values (@Name, @UserId, 0);
-            SELECT SCOPE_IDENTITY();
-        ", accountType);
+        //Using stored procedure: AccountTypes_Insert
+         var id= await connection.QuerySingleAsync<int>("AccountTypes_Insert", 
+                                                        new{Name=accountType.Name, UserId=accountType.UserId}, 
+                                                        commandType: System.Data.CommandType.StoredProcedure);
 
         accountType.Id= id;
     }
@@ -28,6 +27,7 @@ public class AccountTypeRepository:IAccountTypeRepository{
                     SELECT Name,  [Order], Id, UserId
                     FROM AccountTypes
                     WHERE UserId=@UserId
+                    ORDER BY [ORDER]
                 ", new {UserId});
 
                 return userAccountTypeData;
@@ -78,6 +78,21 @@ public class AccountTypeRepository:IAccountTypeRepository{
                 Where id=@Id
             ", new {id});
         }
+    }
+
+    public async Task Order(IEnumerable<AccountTypeDTO> accountTypeOrdered){
+        string query=@" UPDATE AccountTypes
+                        SET [order]=@Order
+                        WHERE id=@Id";
+        using(SqlConnection connection= new SqlConnection(connectionString)){
+            foreach(AccountTypeDTO account in accountTypeOrdered){
+                await connection.ExecuteAsync(query, new{account.Order, account.Id});
+            }
+            //could be replaced without the foreach with:
+            //await connection.ExecuteAsync(query, accountTypeOrdered);
+            //since dapper would automatically make a call for each IEnumerable entry 
+        }
+
     }
 
 
