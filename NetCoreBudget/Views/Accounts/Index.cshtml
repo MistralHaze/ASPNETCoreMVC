@@ -1,0 +1,73 @@
+@model IEnumerable<AccountsIndexViewModel>
+
+@{
+    ViewData["Title"]= "Index";
+
+    string GetBalanceColor(decimal balance)=>balance>=0?"positive":"negative";
+}
+
+<h1>Accounts</h1>
+<a asp-action="Create" class="btn btn-primary">Create</a>
+
+<div class="mb-3 accounts-totals-container">
+    <div >
+        <div>
+            <strong>Positive</strong>
+        </div>
+        <div class="positive">
+            @Model.Where(account=> account.Balance>0).Sum(x=>x.Balance).ToString("N") 
+        </div>
+    </div>
+    <div >
+         <div>
+            <strong>Negative</strong>
+        </div>
+        <div class="negative">
+             @Model.Where(account=> account.Balance<0).Sum(x=>x.Balance).ToString("N") 
+        </div>
+    </div>
+    <div>
+         <div>
+            <strong>Total</strong>
+        </div>
+        <div>
+            @Model.Sum(x=>x.Balance).ToString("N") 
+        </div>
+    </div>
+</div>
+
+
+<div class="accordion accordion-accounts" id="accounts-accordion">
+    @foreach(var accountType in Model)
+    {
+        <div class="accordion-item">
+            <h2 class="accordion-header" >
+                @{
+                    string id= accountType.AccountType.Replace(" ","");
+                    string dataBootstrapTarget= $"#{id}";
+                    string accountTypeClassColor= GetBalanceColor(accountType.Balance);
+                }
+
+                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                data-bs-target=@dataBootstrapTarget>
+                    <span class="me-3">
+                        <span> <strong> @accountType.AccountType </strong></span>
+                        <span class=@accountTypeClassColor> @accountType.Balance.ToString("N") </span>
+                    </span> 
+                </button>
+            </h2>
+            <div id=@id class="accordion-collapse collapse show" data-bs-parent="#accounts-accordion" >
+                    <ul class="list-group">
+                        @foreach(Account ac in accountType.Accounts)
+                        {
+                            var acColor=GetBalanceColor(ac.Balance); 
+                            <li class="list-group-item">
+                                <span><strong>@ac.Name</strong></span>
+                                <span class=@acColor> @accountType.Balance.ToString("N")</span>
+                            </li>
+                        }
+                    </ul>
+            </div>
+        </div>
+    }
+</div>
